@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<!--  별명지정(중복만 안되면 됨)  -->    
+<mapper namespace="board.mybatis.boardMapper">
+ 
+ <!-- resultType:sqlmapConfig.xml에서 알리아스설정때문에 간단히씀 -->
+<!--  select 시작 -->
+    <select id="boardList" resultType="BoardDto" useCache="true">
+        select * from tbl_board order by pos asc
+    </select>    
+    <select id="boardSearch" parameterType="map" resultType="BoardDto">
+        select * from tbl_board where ${keyfield} like '%${keyword}%' order by pos asc
+    </select>
+    <select id="findBySeq" parameterType="int" resultType="BoardDto">
+        select * from tbl_board where seq = #{seq}
+    </select>
+    <select id="preView" parameterType="int" resultType="String">
+        select content from tbl_board where seq = #{seq}
+    </select>
+<!-- select 끝 -->    
+ 
+<!-- 본문 읽기 시작-->
+    <update id="readCount" parameterType="int">
+        update tbl_board set count = count + 1 where seq = #{seq}
+    </update>
+    <update id="upPos">
+        update tbl_board set pos = pos + 1
+    </update>
+<!--  본문 읽기 끝 -->
+ 
+<!-- 글쓰기 시작-->
+    <insert id="insertBoard" parameterType="BoardDto">
+        insert into tbl_board(seq,name,title,content,password,count,regdate,pos,depth)
+        select case count(*) when 0 then 1 else max(seq) + 1 end,#{name},#{title},#{content},#{password},0,curdate(),0,0 from tbl_board    
+    </insert>    
+<!-- 글쓰기 종료 -->    
+ 
+<!-- 글수정 시작 -->
+    <update id="updateBoard" parameterType="map">
+        update tbl_board set title=#{dto.title}, content=#{dto.content}, name=#{dto.name} where seq=#{dto.seq} and password=#{password} 
+    </update>
+<!-- 글수정 종료 -->
+ 
+<!-- 글삭제와 넘어가는 화면 -->
+    <select id="deleteView" parameterType="int" resultType="String">
+        select password from tbl_board where seq=#{seq}
+    </select>
+    <delete id="deleteBoard" parameterType="map">
+        delete from tbl_board where seq=#{seq} and password=#{storPass}
+    </delete>
+<!-- 글삭제 종료 -->
+ 
+<!-- 답변달기와 넘어가는 화면 -->
+    <insert id="replyBoard" parameterType="BoardDto">
+        insert into tbl_board(seq,name,title,content,password,count,regdate,pos,depth)
+        select case count(*) when 0 then 1 else max(seq) + 1 end,#{name},#{title},#{content},#{password},0,curdate(),#{pos}+1,#{depth}+1 from tbl_board                
+    </insert>
+    <update id="replyUpPos" parameterType="BoardDto">
+        update tbl_board set pos = pos + 1 where pos>#{pos}
+    </update>
+<!-- 답변달기 종료 -->
+ 
+</mapper>
